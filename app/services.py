@@ -103,3 +103,26 @@ def delete_hero_card_to_user(db: Session, user_id: int, hero_card_id: int):
     user.heroes.remove(hero_card)
     db.add(user)
     db.commit()
+
+
+def is_user_exist(db: Session, user_id: int):
+    user = get_user_by_id(db, user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} doesn't exist.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+
+def is_hero_card_exist(db: Session, hero_card_id: int):
+    hero_card = get_hero_card_by_id(db, hero_card_id)
+    if hero_card is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Hero with id {hero_card_id} not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return hero_card
+
