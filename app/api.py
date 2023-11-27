@@ -5,10 +5,10 @@ from starlette import status
 from .models import Base
 from .database import engine, Session
 from .services import (create_user, check_user, get_users_list, get_user_by_id, is_user_exist, get_hero_cards_list,
-                       get_hero_card_by_id)
+                       get_hero_card_by_id, add_hero_card_to_user, get_user_hero_cards, delete_hero_card_to_user)
 from .auth.auth_bearer import JWTBearer
 from .auth.auth_handler import sign_jwt
-from .schemas import UserCreateSchema, UserSchema, PaginatedUsersSchema
+from .schemas import UserCreateSchema, UserSchema, PaginatedUsersSchema, HeroCardIdSchema
 from .utils import verify_password
 
 Base.metadata.create_all(bind=engine)
@@ -81,3 +81,54 @@ async def read_hero_card(id: int, db: Annotated[Session, Depends(get_db)]):
         detail=f"Hero with id {id} not found",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+
+@app.get('/users/me/hero-cards/', tags=['users-hero-cards'])
+def read_my_hero_cards(db: Annotated[Session, Depends(get_db)], token: Annotated[str, Depends(JWTBearer())]):
+    user = is_user_exist(db, token)
+    user_hero_cards = get_user_hero_cards(db, user.id)
+    return user_hero_cards
+
+
+@app.post('/users/me/hero-cards/', tags=['users-hero-cards'])
+def add_hero_to_user(hero_card_id: HeroCardIdSchema,
+                     db: Annotated[Session, Depends(get_db)],
+                     token: Annotated[str, Depends(JWTBearer())]):
+    user = is_user_exist(db, token)
+    hero_card = get_hero_card_by_id(db, hero_card_id.hero_card_id)
+    if hero_card is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Hero with id {hero_card_id.hero_card_id} not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    add_hero_card_to_user(db, user.id, hero_card_id.hero_card_id)
+    return {'status': 'success',
+            'hero_id': hero_card.id}
+
+
+@app.delete('/users/me/hero-cards/{id}', tags=['users-hero-cards'])
+def delete_user_card(id, db: Annotated[Session, Depends(get_db)], token: Annotated[str, Depends(JWTBearer())]):
+    user = is_user_exist(db, token)
+    try:
+        delete_hero_card_to_user(db, user.id, id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Hero with id {id} not in your list.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return {"status": "success", "deleted_hero_id": id}
+
+
+@app.get('/users/{user_id}/hero-cards/', tags=['users-hero-cards'])
+def read_user_cards(user_id: int, db: Annotated[Session, Depends(get_db)]):
+    user = get_user_by_id(db, user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} doesnt exist.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    user_hero_cards = get_user_hero_cards(db, user_id)
+    return user_hero_cards

@@ -19,3 +19,7 @@ class PaginatedUsersSchema(BaseModel):
     page: int
     total_pages: int
 
+
+class HeroCardIdSchema(BaseModel):
+    hero_card_id: int
+

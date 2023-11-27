@@ -82,3 +82,24 @@ def get_hero_cards_list(db: Session, skip, limit):
 def get_hero_card_by_id(db: Session, id: int):
     hero_card = db.query(HeroCard).filter(HeroCard.id == id).first()
     return hero_card
+
+
+def add_hero_card_to_user(db: Session, user_id: int, hero_card_id: int):
+    user = db.query(User).filter(User.id == user_id).first()
+    hero_card = db.query(HeroCard).filter(HeroCard.id == hero_card_id).first()
+    user.heroes.append(hero_card)
+    db.add(user)
+    db.commit()
+
+
+def get_user_hero_cards(db: Session, user_id: int):
+    user = db.query(User).filter(User.id == user_id).first()
+    return user.heroes
+
+
+def delete_hero_card_to_user(db: Session, user_id: int, hero_card_id: int):
+    user = db.query(User).filter(User.id == user_id).first()
+    hero_card = db.query(HeroCard).filter(HeroCard.id == hero_card_id).first()
+    user.heroes.remove(hero_card)
+    db.add(user)
+    db.commit()
