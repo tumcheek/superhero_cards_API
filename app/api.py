@@ -4,7 +4,7 @@ from starlette import status
 
 from .models import Base
 from .database import engine, Session
-from .services import (create_user, check_user, get_users_list, get_user_by_id, is_user_exist, get_hero_cards_list,
+from .services import (create_user, check_user, get_users_list, get_user_by_id, check_user_by_token, get_hero_cards_list,
                        get_hero_card_by_id, add_hero_card_to_user, get_user_hero_cards, delete_hero_card_to_user)
 from .auth.auth_bearer import JWTBearer
 from .auth.auth_handler import sign_jwt
@@ -31,7 +31,7 @@ async def register_user(user_data: UserCreateSchema, db: Annotated[Session, Depe
 
 @app.get('/users/me/', tags=["users"])
 async def read_user_me(db: Annotated[Session, Depends(get_db)], token: Annotated[str, Depends(JWTBearer())]):
-    user = is_user_exist(db, token)
+    user = check_user_by_token(db, token)
     return UserSchema(id=user.id, email=user.email)
 
 
@@ -85,7 +85,7 @@ async def read_hero_card(id: int, db: Annotated[Session, Depends(get_db)]):
 
 @app.get('/users/me/hero-cards/', tags=['users-hero-cards'])
 def read_my_hero_cards(db: Annotated[Session, Depends(get_db)], token: Annotated[str, Depends(JWTBearer())]):
-    user = is_user_exist(db, token)
+    user = check_user_by_token(db, token)
     user_hero_cards = get_user_hero_cards(db, user.id)
     return user_hero_cards
 
@@ -94,7 +94,7 @@ def read_my_hero_cards(db: Annotated[Session, Depends(get_db)], token: Annotated
 def add_hero_to_user(hero_card_id: HeroCardIdSchema,
                      db: Annotated[Session, Depends(get_db)],
                      token: Annotated[str, Depends(JWTBearer())]):
-    user = is_user_exist(db, token)
+    user = check_user_by_token(db, token)
     hero_card = get_hero_card_by_id(db, hero_card_id.hero_card_id)
     if hero_card is None:
         raise HTTPException(
@@ -109,7 +109,7 @@ def add_hero_to_user(hero_card_id: HeroCardIdSchema,
 
 @app.delete('/users/me/hero-cards/{id}', tags=['users-hero-cards'])
 def delete_user_card(id, db: Annotated[Session, Depends(get_db)], token: Annotated[str, Depends(JWTBearer())]):
-    user = is_user_exist(db, token)
+    user = check_user_by_token(db, token)
     try:
         delete_hero_card_to_user(db, user.id, id)
     except ValueError:

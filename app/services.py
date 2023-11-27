@@ -53,7 +53,7 @@ def get_user_by_id(db: Session, id: int):
     return user
 
 
-def is_user_exist(db: Session, token: str = Depends(JWTBearer())):
+def check_user_by_token(db: Session, token: str = Depends(JWTBearer())):
     decoded_token = decode_JWT(token)
     user = db.query(User).filter(User.email == decoded_token['email']).first()
 
