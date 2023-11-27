@@ -6,7 +6,7 @@ from starlette import status
 from .auth.auth_bearer import JWTBearer
 from .auth.auth_handler import decode_JWT
 from .utils import get_password_hash, convert_user_model_to_user_schemas
-from .models import User
+from .models import User, HeroCard
 
 
 def create_user(db: Session, email: str, password: str):
@@ -63,3 +63,22 @@ def is_user_exist(db: Session, token: str = Depends(JWTBearer())):
             detail="User not found",
         )
     return user
+
+
+def get_hero_cards_list(db: Session, skip, limit):
+    hero_cards = db.query(HeroCard).offset(skip).limit(limit).all()
+    total_hero_cards = db.query(HeroCard).count()
+    total_pages = (total_hero_cards + limit - 1) // limit
+    current_page = (skip // limit) + 1
+    result = {
+        'hero_cards': hero_cards,
+        'total': total_hero_cards,
+        'total_pages': total_pages,
+        'page': current_page
+    }
+    return result
+
+
+def get_hero_card_by_id(db: Session, id: int):
+    hero_card = db.query(HeroCard).filter(HeroCard.id == id).first()
+    return hero_card

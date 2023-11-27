@@ -1,10 +1,11 @@
 from typing import Annotated
-from fastapi import FastAPI,Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException
 from starlette import status
 
 from .models import Base
 from .database import engine, Session
-from .services import create_user, check_user, get_users_list, get_user_by_id, is_user_exist
+from .services import (create_user, check_user, get_users_list, get_user_by_id, is_user_exist, get_hero_cards_list,
+                       get_hero_card_by_id)
 from .auth.auth_bearer import JWTBearer
 from .auth.auth_handler import sign_jwt
 from .schemas import UserCreateSchema, UserSchema, PaginatedUsersSchema
@@ -65,5 +66,18 @@ async def get_token(form_data: UserCreateSchema, db: Annotated[Session, Depends(
     return sign_jwt(user.email)
 
 
+@app.get('/hero-cards/', tags=['hero-cards'])
+async def read_hero_cards(db: Annotated[Session, Depends(get_db)], skip: int = 0, limit: int = 10,):
+    return get_hero_cards_list(db, skip, limit)
 
 
+@app.get('/hero-cards/{id}', tags=["hero-cards"])
+async def read_hero_card(id: int, db: Annotated[Session, Depends(get_db)]):
+    hero_card = get_hero_card_by_id(db, id)
+    if hero_card is not None:
+        return hero_card
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"Hero with id {id} not found",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
