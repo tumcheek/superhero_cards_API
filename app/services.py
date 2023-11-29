@@ -105,7 +105,7 @@ def delete_hero_card_to_user(db: Session, user_id: int, hero_card_id: int):
     db.commit()
 
 
-def is_user_exist(db: Session, user_id: int):
+def get_user(db: Session, user_id: int):
     user = get_user_by_id(db, user_id)
     if user is None:
         raise HTTPException(
@@ -116,7 +116,7 @@ def is_user_exist(db: Session, user_id: int):
     return user
 
 
-def is_hero_card_exist(db: Session, hero_card_id: int):
+def get_hero_card(db: Session, hero_card_id: int):
     hero_card = get_hero_card_by_id(db, hero_card_id)
     if hero_card is None:
         raise HTTPException(

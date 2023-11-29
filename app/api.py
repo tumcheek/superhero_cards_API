@@ -6,7 +6,7 @@ from .models import Base
 from .database import engine, Session
 from .services import (create_user, check_user, get_users_list, get_user_by_id, check_user_by_token,
                        get_hero_cards_list, add_hero_card_to_user, get_user_hero_cards,
-                       delete_hero_card_to_user, is_user_exist, is_hero_card_exist)
+                       delete_hero_card_to_user, get_user, get_hero_card)
 from .auth.auth_bearer import JWTBearer
 from .auth.auth_handler import sign_jwt
 from .schemas import UserCreateSchema, UserSchema, PaginatedUsersSchema, HeroCardIdSchema
@@ -74,7 +74,7 @@ async def read_hero_cards(db: Annotated[Session, Depends(get_db)], skip: int = 0
 
 @app.get('/hero-cards/{id}', tags=["hero-cards"])
 async def read_hero_card(id: int, db: Annotated[Session, Depends(get_db)]):
-    hero_card = is_hero_card_exist(db, id)
+    hero_card = get_hero_card(db, id)
     return hero_card
 
 
@@ -90,7 +90,7 @@ def add_hero_to_user(hero_card_id: HeroCardIdSchema,
                      db: Annotated[Session, Depends(get_db)],
                      token: Annotated[str, Depends(JWTBearer())]):
     user = check_user_by_token(db, token)
-    hero_card = is_hero_card_exist(db, hero_card_id.hero_card_id)
+    hero_card = get_hero_card(db, hero_card_id.hero_card_id)
     add_hero_card_to_user(db, user.id, hero_card_id.hero_card_id)
     return {'status': 'success',
             'hero_id': hero_card.id}
@@ -112,6 +112,6 @@ def delete_user_card(id, db: Annotated[Session, Depends(get_db)], token: Annotat
 
 @app.get('/users/{user_id}/hero-cards/', tags=['users-hero-cards'])
 def read_user_cards(user_id: int, db: Annotated[Session, Depends(get_db)]):
-    is_user_exist(db, user_id)
+    get_user(db, user_id)
     user_hero_cards = get_user_hero_cards(db, user_id)
     return user_hero_cards
